@@ -72,20 +72,31 @@ public class MainActivity extends AppCompatActivity implements VChromeClient.Ope
     private String photoPath;
     private Uri photoUri;
 
+
     private void takePhoto() {
-        File photoFile = new File(Environment.getExternalStorageDirectory(), "image/" + System.currentTimeMillis() + ".jpg");
-        photoPath = photoFile.getAbsolutePath();
-        if (!photoFile.getParentFile().exists()) photoFile.getParentFile().mkdirs();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            photoUri = FileProvider.getUriForFile(this, getPackageName(), photoFile);
-        } else {
-            photoUri = Uri.fromFile(photoFile);
-        }
-        Intent intent = new Intent();
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION); //添加这一句表示对目标应用临时授权该Uri所代表的文件
-        intent.setAction(MediaStore.ACTION_IMAGE_CAPTURE);//设置Action为拍照
-        intent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);//将拍取的照片保存到指定URI
-        startActivityForResult(intent, CAMERA_STORAGE);
+        rxPermissions
+                .request(Manifest.permission.CAMERA,
+                        Manifest.permission.READ_EXTERNAL_STORAGE)
+                .subscribe(granted -> {
+                    if (granted) {
+                        File photoFile = new File(Environment.getExternalStorageDirectory(), "image/" + System.currentTimeMillis() + ".jpg");
+                        photoPath = photoFile.getAbsolutePath();
+                        if (!photoFile.getParentFile().exists()) photoFile.getParentFile().mkdirs();
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                            photoUri = FileProvider.getUriForFile(this, getPackageName(), photoFile);
+                        } else {
+                            photoUri = Uri.fromFile(photoFile);
+                        }
+                        Intent intent = new Intent();
+                        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION); //添加这一句表示对目标应用临时授权该Uri所代表的文件
+                        intent.setAction(MediaStore.ACTION_IMAGE_CAPTURE);//设置Action为拍照
+                        intent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);//将拍取的照片保存到指定URI
+                        startActivityForResult(intent, CAMERA_STORAGE);
+                    } else {
+                        // At least one permission is denied
+                        Toast.makeText(this, "没有权限", Toast.LENGTH_LONG).show();
+                    }
+                });
     }
 
 
